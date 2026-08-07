@@ -14,11 +14,10 @@ function RollChar({ char, trigger }) {
   const targetIndex = findCharIndex(char)
   const length = REEL_CHARS.length
 
-  const [position, setPosition] = useState(targetIndex)
+  const [renderIndex, setRenderIndex] = useState(targetIndex)
+  const [transitionOn, setTransitionOn] = useState(false)
   const prevTriggerRef = useRef(null)
-  const startTimeoutRef = useRef(null)
-  const endTimeoutRef = useRef(null)
-  const rafRef = useRef(null)
+  const timersRef = useRef([])
 
   useEffect(() => {
     if (prevTriggerRef.current === trigger) return
@@ -26,33 +25,40 @@ function RollChar({ char, trigger }) {
     prevTriggerRef.current = trigger
 
     if (isInitial) return
-    if (targetIndex === position) return
+    if (targetIndex === renderIndex) return
 
-    const startIdx = position
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
+
+    const startIdx = renderIndex
     const fullCycles = 3
-    const steps = fullCycles * length + ((targetIndex - startIdx + length) % length)
-    const duration = 900
+    const delta = (targetIndex - startIdx + length) % length
+    const endIdx = fullCycles * length + delta
 
-    setPosition(startIdx)
+    setTransitionOn(false)
+    setRenderIndex(startIdx)
 
-    startTimeoutRef.current = setTimeout(() => {
-      rafRef.current = requestAnimationFrame(() => {
-        setPosition(steps)
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTransitionOn(true)
+        setRenderIndex(endIdx)
       })
-    }, 20)
+    })
 
-    endTimeoutRef.current = setTimeout(() => {
-      setPosition(targetIndex)
-    }, duration + 40)
+    const t1 = setTimeout(() => {
+      setTransitionOn(false)
+      setRenderIndex(targetIndex)
+    }, 950)
+
+    timersRef.current.push(t1)
 
     return () => {
-      if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current)
-      if (endTimeoutRef.current) clearTimeout(endTimeoutRef.current)
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      clearTimeout(t1)
+      cancelAnimationFrame(rafId)
     }
   }, [char, trigger, targetIndex])
 
-  const offsetPercent = (position / length) * 100
+  const offsetPercent = (renderIndex / length) * 100
 
   return (
     <span
@@ -64,7 +70,9 @@ function RollChar({ char, trigger }) {
         className="absolute left-0 right-0 flex flex-col"
         style={{
           transform: `translateY(-${offsetPercent}%)`,
-          transition: `transform ${900}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+          transition: transitionOn
+            ? 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)'
+            : 'none',
           willChange: 'transform',
         }}
       >
