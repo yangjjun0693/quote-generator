@@ -6,51 +6,58 @@ function findCharIndex(char) {
   if (char === ' ') return REEL_CHARS.indexOf(' ')
   const idx = REEL_CHARS.indexOf(char)
   if (idx !== -1) return idx
-  return REEL_CHARS.indexOf(char.toUpperCase()) !== -1
-    ? REEL_CHARS.indexOf(char.toUpperCase())
-    : 0
+  const upperIdx = REEL_CHARS.indexOf(char.toUpperCase())
+  return upperIdx !== -1 ? upperIdx : 0
 }
 
-function RollChar({ char, shouldFlip, direction = 'down' }) {
+function RollChar({ char, trigger }) {
   const targetIndex = findCharIndex(char)
   const [currentIndex, setCurrentIndex] = useState(targetIndex)
-  const [isRolling, setIsRolling] = useState(false)
-  const prevShouldFlipRef = useRef(shouldFlip)
+  const prevTriggerRef = useRef(null)
   const intervalRef = useRef(null)
   const timeoutRef = useRef(null)
   const counterRef = useRef(0)
+  const startIndexRef = useRef(targetIndex)
 
   useEffect(() => {
-    if (prevShouldFlipRef.current === shouldFlip) return
-    prevShouldFlipRef.current = shouldFlip
+    if (prevTriggerRef.current === trigger) return
+    const isInitial = prevTriggerRef.current === null
+    prevTriggerRef.current = trigger
 
-    if (targetIndex === currentIndex) return
+    if (isInitial) {
+      startIndexRef.current = targetIndex
+      return
+    }
 
-    setIsRolling(true)
+    if (targetIndex === startIndexRef.current) {
+      startIndexRef.current = targetIndex
+      return
+    }
+
+    const startIdx = startIndexRef.current
+    startIndexRef.current = targetIndex
     counterRef.current = 0
+    setCurrentIndex(startIdx)
 
-    const rollSpeed = 35
-    const totalSteps = 18 + targetIndex
+    const rollSpeed = 40
+    const totalSteps = 16
 
     intervalRef.current = setInterval(() => {
       counterRef.current += 1
-      const next = direction === 'down'
-        ? (currentIndex + counterRef.current) % REEL_CHARS.length
-        : (currentIndex - counterRef.current + REEL_CHARS.length * 10) % REEL_CHARS.length
+      const next = (startIdx + counterRef.current) % REEL_CHARS.length
       setCurrentIndex(next)
     }, rollSpeed)
 
     timeoutRef.current = setTimeout(() => {
       clearInterval(intervalRef.current)
       setCurrentIndex(targetIndex)
-      setIsRolling(false)
-    }, totalSteps * rollSpeed + 50)
+    }, totalSteps * rollSpeed + 30)
 
     return () => {
       clearInterval(intervalRef.current)
       clearTimeout(timeoutRef.current)
     }
-  }, [char, shouldFlip, targetIndex])
+  }, [char, trigger, targetIndex])
 
   const offsetPercent = (currentIndex / REEL_CHARS.length) * 100
 
@@ -64,16 +71,15 @@ function RollChar({ char, shouldFlip, direction = 'down' }) {
         className="absolute left-0 right-0 flex flex-col"
         style={{
           transform: `translateY(-${offsetPercent}%)`,
-          transition: isRolling
-            ? 'transform 0s linear'
-            : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'none',
+          willChange: 'transform',
         }}
       >
         {REEL_CHARS.split('').map((c, i) => (
           <span
             key={i}
-            className="flex items-center justify-center leading-[1.1em]"
-            style={{ height: '1.1em' }}
+            className="flex items-center justify-center"
+            style={{ height: '1.1em', lineHeight: '1.1em' }}
           >
             {c === ' ' ? '\u00A0' : c}
           </span>
@@ -83,12 +89,12 @@ function RollChar({ char, shouldFlip, direction = 'down' }) {
   )
 }
 
-export function FidsText({ text, trigger, className = '', as: Component = 'span', direction = 'down' }) {
+export function FidsText({ text, trigger, className = '', as: Component = 'span' }) {
   const chars = [...text]
   return (
     <Component className={className} aria-label={text}>
       {chars.map((char, i) => (
-        <RollChar key={`${trigger}-${i}`} char={char} shouldFlip={trigger} direction={direction} />
+        <RollChar key={i} char={char} trigger={trigger} />
       ))}
     </Component>
   )
