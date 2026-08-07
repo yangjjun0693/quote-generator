@@ -17,6 +17,7 @@ function RollChar({ char, trigger }) {
   const [renderIndex, setRenderIndex] = useState(targetIndex)
   const [transitionOn, setTransitionOn] = useState(false)
   const prevTriggerRef = useRef(null)
+  const startIndexRef = useRef(targetIndex)
   const timersRef = useRef([])
 
   useEffect(() => {
@@ -24,22 +25,27 @@ function RollChar({ char, trigger }) {
     const isInitial = prevTriggerRef.current === null
     prevTriggerRef.current = trigger
 
-    if (isInitial) return
-    if (targetIndex === renderIndex) return
+    if (isInitial) {
+      startIndexRef.current = targetIndex
+      return
+    }
+
+    if (targetIndex === startIndexRef.current) return
 
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
 
-    const startIdx = renderIndex
+    const startIdx = startIndexRef.current
     const fullCycles = 3
-    const delta = (targetIndex - startIdx + length) % length
-    const endIdx = fullCycles * length + delta
+    const endIdx = fullCycles * length + targetIndex
+    startIndexRef.current = targetIndex
 
     setTransitionOn(false)
     setRenderIndex(startIdx)
 
-    const rafId = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    let raf1, raf2
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
         setTransitionOn(true)
         setRenderIndex(endIdx)
       })
@@ -54,7 +60,8 @@ function RollChar({ char, trigger }) {
 
     return () => {
       clearTimeout(t1)
-      cancelAnimationFrame(rafId)
+      cancelAnimationFrame(raf1)
+      if (raf2) cancelAnimationFrame(raf2)
     }
   }, [char, trigger, targetIndex])
 
@@ -71,7 +78,7 @@ function RollChar({ char, trigger }) {
         style={{
           transform: `translateY(-${offsetPercent}%)`,
           transition: transitionOn
-            ? 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)'
+            ? 'transform 0.9s cubic-bezier(0.45, 0.05, 0.55, 0.95)'
             : 'none',
           willChange: 'transform',
         }}
