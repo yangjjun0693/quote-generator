@@ -1,16 +1,53 @@
-# React + Vite
+# Random Quote Generator
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A clean, production-ready single-page Random Quote Generator built with React and Tailwind CSS. Features curated quotes, four customizable themes, and a sharp, functional UI.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **15 curated quotes** from notable figures
+- **Random quote selection** with no consecutive duplicates
+- **4 themes**: Minimal, Dark, Warm, Mono
+- **Keyboard support**: Press `Space` for new quote
+- **Accessible**: ARIA labels, semantic HTML, focus management
+- **CI/CD**: Automatic deployment to Cloudflare Pages via GitHub Actions
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19
+- Vite 8
+- Tailwind CSS 3
+- Cloudflare Pages
 
-## Expanding the Oxlint configuration
+## Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm install
+npm run dev      # Start dev server
+npm run build    # Production build
+npm run preview  # Preview production build
+```
+
+## Deployment
+
+The app is configured for automatic deployment to Cloudflare Pages via GitHub Actions (`.github/workflows/deploy.yml`).
+
+### Setup
+
+1. Create a Cloudflare account and get your [Account ID](https://dash.cloudflare.com/?to=/:account/workers/overview)
+2. Create an [API Token](https://dash.cloudflare.com/profile/api-tokens) with `Cloudflare Pages: Edit` permission
+3. Add these secrets to your GitHub repo (`Settings → Secrets and variables → Actions`):
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+4. Create a Cloudflare Pages project named `quote-generator` connected to this repo
+5. Push to `master` branch to trigger deployment
+
+### Manual Deployment
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name=quote-generator
+```
+
+## Design
+
+Anti-"vibe-coded" aesthetic: no glassmorphism, neon gradients, or generic purple hero cards. Clean grid layouts, crisp typography, functional borders, subtle hover transitions, utility-driven spacing.
