@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { ScrambleText } from './components/ScrambleText'
 
 const QUOTES = [
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
@@ -74,11 +75,17 @@ function getRandomQuote(excludeIndex) {
 function QuoteCard({ quote, theme, className = '' }) {
   const t = THEMES[theme]
   return (
-    <blockquote className={`quote-card ${t.card} ${t.text} ${className} animate-slide-up`} role="quote" aria-live="polite">
-      <p className="quote-text text-balance">"{quote.text}"</p>
-      <footer className="quote-author {t.textMuted} flex items-center gap-3">
+    <blockquote className={`quote-card ${t.card} ${t.text} ${className}`} role="quote" aria-live="polite">
+      <p className="quote-text text-balance fids-text">
+        <span aria-hidden="true">"</span>
+        <ScrambleText text={quote.text} as="span" />
+        <span aria-hidden="true">"</span>
+      </p>
+      <footer className={`quote-author ${t.textMuted} flex items-center gap-3 fids-text`}>
         <span aria-hidden="true">—</span>
-        <cite>{quote.author}</cite>
+        <cite>
+          <ScrambleText text={quote.author} as="span" />
+        </cite>
       </footer>
     </blockquote>
   )
@@ -86,7 +93,7 @@ function QuoteCard({ quote, theme, className = '' }) {
 
 function ThemeSelector({ currentTheme, onThemeChange }) {
   const themeKeys = Object.keys(THEMES)
-  
+
   return (
     <div className="flex flex-wrap gap-2 justify-center" role="radiogroup" aria-label="Select theme">
       {themeKeys.map(key => {
@@ -127,20 +134,14 @@ export default function App() {
   const [currentTheme, setCurrentTheme] = useState('minimal')
   const [currentQuote, setCurrentQuote] = useState(null)
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(-1)
-  const [isLoading, setIsLoading] = useState(false)
 
   const theme = THEMES[currentTheme]
 
   const handleNewQuote = useCallback(() => {
-    if (isLoading) return
-    setIsLoading(true)
-    setTimeout(() => {
-      const { quote, index } = getRandomQuote(currentQuoteIndex)
-      setCurrentQuote(quote)
-      setCurrentQuoteIndex(index)
-      setIsLoading(false)
-    }, 150)
-  }, [currentQuoteIndex, isLoading])
+    const { quote, index } = getRandomQuote(currentQuoteIndex)
+    setCurrentQuote(quote)
+    setCurrentQuoteIndex(index)
+  }, [currentQuoteIndex])
 
   useEffect(() => {
     const { quote, index } = getRandomQuote(-1)
@@ -182,15 +183,14 @@ export default function App() {
         <QuoteCard quote={currentQuote} theme={currentTheme} />
 
         <div className="w-full flex flex-col items-center gap-6 animate-fade-in">
-          <NewQuoteButton 
-            onClick={handleNewQuote} 
-            disabled={isLoading}
+          <NewQuoteButton
+            onClick={handleNewQuote}
             theme={currentTheme}
           />
-          
-          <ThemeSelector 
-            currentTheme={currentTheme} 
-            onThemeChange={setCurrentTheme} 
+
+          <ThemeSelector
+            currentTheme={currentTheme}
+            onThemeChange={setCurrentTheme}
           />
         </div>
 
