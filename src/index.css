@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-minimal-border;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply min-h-screen antialiased transition-colors duration-300;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+@layer components {
+  .quote-card {
+    @apply relative p-8 md:p-12 rounded-xl border transition-all duration-300 animate-fade-in;
+  }
+  
+  .quote-text {
+    @apply text-2xl md:text-3xl lg:text-4xl font-medium leading-relaxed tracking-tight;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  
+  .quote-author {
+    @apply mt-6 text-base md:text-lg font-medium tracking-wide uppercase;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-medium tracking-wide uppercase text-sm transition-all duration-200
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .theme-btn {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+           border;
+  }
+  
+  .theme-btn-active {
+    @apply shadow-inner;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
