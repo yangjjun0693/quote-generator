@@ -61,4 +61,13 @@
     font-feature-settings: 'tnum' 1, 'zero' 1;
     letter-spacing: 0.01em;
   }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
 }

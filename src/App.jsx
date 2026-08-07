@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { ScrambleText } from './components/ScrambleText'
+import { FidsText } from './components/ScrambleText'
 
 const QUOTES = [
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
@@ -72,19 +72,19 @@ function getRandomQuote(excludeIndex) {
   return { quote: QUOTES[randomIndex], index: randomIndex }
 }
 
-function QuoteCard({ quote, theme, className = '' }) {
+function QuoteCard({ quote, theme, className = '', flipKey }) {
   const t = THEMES[theme]
   return (
     <blockquote className={`quote-card ${t.card} ${t.text} ${className}`} role="quote" aria-live="polite">
       <p className="quote-text text-balance fids-text">
         <span aria-hidden="true">"</span>
-        <ScrambleText text={quote.text} as="span" />
+        <FidsText text={quote.text} trigger={flipKey} as="span" />
         <span aria-hidden="true">"</span>
       </p>
       <footer className={`quote-author ${t.textMuted} flex items-center gap-3 fids-text`}>
         <span aria-hidden="true">—</span>
         <cite>
-          <ScrambleText text={quote.author} as="span" />
+          <FidsText text={quote.author} trigger={flipKey} as="span" />
         </cite>
       </footer>
     </blockquote>
@@ -134,6 +134,7 @@ export default function App() {
   const [currentTheme, setCurrentTheme] = useState('minimal')
   const [currentQuote, setCurrentQuote] = useState(null)
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(-1)
+  const [flipKey, setFlipKey] = useState(0)
 
   const theme = THEMES[currentTheme]
 
@@ -141,6 +142,7 @@ export default function App() {
     const { quote, index } = getRandomQuote(currentQuoteIndex)
     setCurrentQuote(quote)
     setCurrentQuoteIndex(index)
+    setFlipKey(k => k + 1)
   }, [currentQuoteIndex])
 
   useEffect(() => {
@@ -180,7 +182,7 @@ export default function App() {
           </p>
         </header>
 
-        <QuoteCard quote={currentQuote} theme={currentTheme} />
+        <QuoteCard quote={currentQuote} theme={currentTheme} flipKey={flipKey} />
 
         <div className="w-full flex flex-col items-center gap-6 animate-fade-in">
           <NewQuoteButton

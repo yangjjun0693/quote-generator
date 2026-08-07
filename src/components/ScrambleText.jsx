@@ -1,86 +1,87 @@
 import { useState, useEffect, useRef } from 'react'
 
-const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~'
-
-function getRandomChar() {
-  return CHARS[Math.floor(Math.random() * CHARS.length)]
-}
-
-export function useScramble(text, options = {}) {
-  const {
-    duration = 600,
-    speed = 30,
-    startDelay = 0,
-  } = options
-
-  const [displayText, setDisplayText] = useState(text)
-  const animationRef = useRef(null)
-  const startTimeRef = useRef(null)
-  const targetTextRef = useRef(text)
+function FlipChar({ char, shouldFlip }) {
+  const [displayChar, setDisplayChar] = useState(char)
+  const [nextChar, setNextChar] = useState(char)
+  const [flipping, setFlipping] = useState(false)
+  const prevShouldFlipRef = useRef(shouldFlip)
+  const timeoutRef = useRef(null)
 
   useEffect(() => {
-    targetTextRef.current = text
+    if (prevShouldFlipRef.current === shouldFlip) {
+      setDisplayChar(char)
+      setNextChar(char)
+      return
+    }
+    prevShouldFlipRef.current = shouldFlip
 
-    if (!text) {
-      setDisplayText('')
+    if (char === displayChar) {
+      setDisplayChar(char)
+      setNextChar(char)
       return
     }
 
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-    }
+    setNextChar(char)
+    setFlipping(true)
 
-    const animate = (timestamp) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp + startDelay
-      }
-
-      const elapsed = timestamp - startTimeRef.current
-
-      if (elapsed < 0) {
-        animationRef.current = requestAnimationFrame(animate)
-        return
-      }
-
-      const progress = Math.min(elapsed / duration, 1)
-      const target = targetTextRef.current
-
-      let result = ''
-      for (let i = 0; i < target.length; i++) {
-        const charProgress = (progress * target.length) - i
-        if (charProgress >= 1) {
-          result += target[i]
-        } else if (charProgress > 0) {
-          result += getRandomChar()
-        } else {
-          result += target[i]
-        }
-      }
-
-      setDisplayText(result)
-
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate)
-      } else {
-        setDisplayText(target)
-        startTimeRef.current = null
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(animate)
+    timeoutRef.current = setTimeout(() => {
+      setDisplayChar(char)
+      setFlipping(false)
+    }, 350)
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-      startTimeRef.current = null
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
-  }, [text, duration, startDelay])
+  }, [char, shouldFlip])
 
-  return displayText
+  if (char === ' ' && displayChar === ' ') {
+    return <span className="inline-block w-[0.4em]" aria-hidden="true">&nbsp;</span>
+  }
+
+  return (
+    <span className="relative inline-block align-middle" style={{ width: '0.62em', height: '1.1em' }}>
+      <span className="invisible block leading-[1.1em]">M</span>
+
+      <span
+        className="absolute inset-0 flex items-center justify-center leading-[1.1em]"
+        style={{
+          transform: flipping ? 'rotateX(-90deg)' : 'rotateX(0deg)',
+          transformOrigin: 'center center',
+          transition: 'transform 0.35s cubic-bezier(0.45, 0, 0.55, 1), opacity 0.35s ease-in',
+          opacity: flipping ? 0 : 1,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+        }}
+        aria-hidden="true"
+      >
+        {displayChar}
+      </span>
+
+      <span
+        className="absolute inset-0 flex items-center justify-center leading-[1.1em]"
+        style={{
+          transform: flipping ? 'rotateX(0deg)' : 'rotateX(90deg)',
+          transformOrigin: 'center center',
+          transition: 'transform 0.35s cubic-bezier(0.45, 0, 0.55, 1) 0.1s, opacity 0.35s ease-out 0.1s',
+          opacity: flipping ? 1 : 0,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+        }}
+        aria-hidden="true"
+      >
+        {nextChar}
+      </span>
+    </span>
+  )
 }
 
-export function ScrambleText({ text, className = '', as: Component = 'span' }) {
-  const displayText = useScramble(text, { duration: 700 })
-  return <Component className={className}>{displayText}</Component>
+export function FidsText({ text, trigger, className = '', as: Component = 'span' }) {
+  const chars = [...text]
+  return (
+    <Component className={className}>
+      {chars.map((char, i) => (
+        <FlipChar key={`${trigger}-${i}`} char={char} shouldFlip={trigger} />
+      ))}
+    </Component>
+  )
 }
