@@ -1,86 +1,94 @@
 import { useState, useEffect, useRef } from 'react'
 
-function FlipChar({ char, shouldFlip }) {
-  const [displayChar, setDisplayChar] = useState(char)
-  const [nextChar, setNextChar] = useState(char)
-  const [flipping, setFlipping] = useState(false)
+const REEL_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?-—'
+
+function findCharIndex(char) {
+  if (char === ' ') return REEL_CHARS.indexOf(' ')
+  const idx = REEL_CHARS.indexOf(char)
+  if (idx !== -1) return idx
+  return REEL_CHARS.indexOf(char.toUpperCase()) !== -1
+    ? REEL_CHARS.indexOf(char.toUpperCase())
+    : 0
+}
+
+function RollChar({ char, shouldFlip, direction = 'down' }) {
+  const targetIndex = findCharIndex(char)
+  const [currentIndex, setCurrentIndex] = useState(targetIndex)
+  const [isRolling, setIsRolling] = useState(false)
   const prevShouldFlipRef = useRef(shouldFlip)
+  const intervalRef = useRef(null)
   const timeoutRef = useRef(null)
+  const counterRef = useRef(0)
 
   useEffect(() => {
-    if (prevShouldFlipRef.current === shouldFlip) {
-      setDisplayChar(char)
-      setNextChar(char)
-      return
-    }
+    if (prevShouldFlipRef.current === shouldFlip) return
     prevShouldFlipRef.current = shouldFlip
 
-    if (char === displayChar) {
-      setDisplayChar(char)
-      setNextChar(char)
-      return
-    }
+    if (targetIndex === currentIndex) return
 
-    setNextChar(char)
-    setFlipping(true)
+    setIsRolling(true)
+    counterRef.current = 0
+
+    const rollSpeed = 35
+    const totalSteps = 18 + targetIndex
+
+    intervalRef.current = setInterval(() => {
+      counterRef.current += 1
+      const next = direction === 'down'
+        ? (currentIndex + counterRef.current) % REEL_CHARS.length
+        : (currentIndex - counterRef.current + REEL_CHARS.length * 10) % REEL_CHARS.length
+      setCurrentIndex(next)
+    }, rollSpeed)
 
     timeoutRef.current = setTimeout(() => {
-      setDisplayChar(char)
-      setFlipping(false)
-    }, 350)
+      clearInterval(intervalRef.current)
+      setCurrentIndex(targetIndex)
+      setIsRolling(false)
+    }, totalSteps * rollSpeed + 50)
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      clearInterval(intervalRef.current)
+      clearTimeout(timeoutRef.current)
     }
-  }, [char, shouldFlip])
+  }, [char, shouldFlip, targetIndex])
 
-  if (char === ' ' && displayChar === ' ') {
-    return <span className="inline-block w-[0.4em]" aria-hidden="true">&nbsp;</span>
-  }
+  const offsetPercent = (currentIndex / REEL_CHARS.length) * 100
 
   return (
-    <span className="relative inline-block align-middle" style={{ width: '0.62em', height: '1.1em' }}>
-      <span className="invisible block leading-[1.1em]">M</span>
-
+    <span
+      className="relative inline-block overflow-hidden align-middle"
+      style={{ width: '0.62em', height: '1.1em' }}
+      aria-hidden="true"
+    >
       <span
-        className="absolute inset-0 flex items-center justify-center leading-[1.1em]"
+        className="absolute left-0 right-0 flex flex-col"
         style={{
-          transform: flipping ? 'rotateX(-90deg)' : 'rotateX(0deg)',
-          transformOrigin: 'center center',
-          transition: 'transform 0.35s cubic-bezier(0.45, 0, 0.55, 1), opacity 0.35s ease-in',
-          opacity: flipping ? 0 : 1,
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
+          transform: `translateY(-${offsetPercent}%)`,
+          transition: isRolling
+            ? 'transform 0s linear'
+            : 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        aria-hidden="true"
       >
-        {displayChar}
-      </span>
-
-      <span
-        className="absolute inset-0 flex items-center justify-center leading-[1.1em]"
-        style={{
-          transform: flipping ? 'rotateX(0deg)' : 'rotateX(90deg)',
-          transformOrigin: 'center center',
-          transition: 'transform 0.35s cubic-bezier(0.45, 0, 0.55, 1) 0.1s, opacity 0.35s ease-out 0.1s',
-          opacity: flipping ? 1 : 0,
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-        }}
-        aria-hidden="true"
-      >
-        {nextChar}
+        {REEL_CHARS.split('').map((c, i) => (
+          <span
+            key={i}
+            className="flex items-center justify-center leading-[1.1em]"
+            style={{ height: '1.1em' }}
+          >
+            {c === ' ' ? '\u00A0' : c}
+          </span>
+        ))}
       </span>
     </span>
   )
 }
 
-export function FidsText({ text, trigger, className = '', as: Component = 'span' }) {
+export function FidsText({ text, trigger, className = '', as: Component = 'span', direction = 'down' }) {
   const chars = [...text]
   return (
-    <Component className={className}>
+    <Component className={className} aria-label={text}>
       {chars.map((char, i) => (
-        <FlipChar key={`${trigger}-${i}`} char={char} shouldFlip={trigger} />
+        <RollChar key={`${trigger}-${i}`} char={char} shouldFlip={trigger} direction={direction} />
       ))}
     </Component>
   )
