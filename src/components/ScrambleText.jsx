@@ -12,54 +12,47 @@ function findCharIndex(char) {
 
 function RollChar({ char, trigger }) {
   const targetIndex = findCharIndex(char)
-  const [currentIndex, setCurrentIndex] = useState(targetIndex)
+  const length = REEL_CHARS.length
+
+  const [position, setPosition] = useState(targetIndex)
   const prevTriggerRef = useRef(null)
-  const intervalRef = useRef(null)
-  const timeoutRef = useRef(null)
-  const counterRef = useRef(0)
-  const startIndexRef = useRef(targetIndex)
+  const startTimeoutRef = useRef(null)
+  const endTimeoutRef = useRef(null)
+  const rafRef = useRef(null)
 
   useEffect(() => {
     if (prevTriggerRef.current === trigger) return
     const isInitial = prevTriggerRef.current === null
     prevTriggerRef.current = trigger
 
-    if (isInitial) {
-      startIndexRef.current = targetIndex
-      return
-    }
+    if (isInitial) return
+    if (targetIndex === position) return
 
-    if (targetIndex === startIndexRef.current) {
-      startIndexRef.current = targetIndex
-      return
-    }
+    const startIdx = position
+    const fullCycles = 3
+    const steps = fullCycles * length + ((targetIndex - startIdx + length) % length)
+    const duration = 900
 
-    const startIdx = startIndexRef.current
-    startIndexRef.current = targetIndex
-    counterRef.current = 0
-    setCurrentIndex(startIdx)
+    setPosition(startIdx)
 
-    const rollSpeed = 40
-    const totalSteps = 16
+    startTimeoutRef.current = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        setPosition(steps)
+      })
+    }, 20)
 
-    intervalRef.current = setInterval(() => {
-      counterRef.current += 1
-      const next = (startIdx + counterRef.current) % REEL_CHARS.length
-      setCurrentIndex(next)
-    }, rollSpeed)
-
-    timeoutRef.current = setTimeout(() => {
-      clearInterval(intervalRef.current)
-      setCurrentIndex(targetIndex)
-    }, totalSteps * rollSpeed + 30)
+    endTimeoutRef.current = setTimeout(() => {
+      setPosition(targetIndex)
+    }, duration + 40)
 
     return () => {
-      clearInterval(intervalRef.current)
-      clearTimeout(timeoutRef.current)
+      if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current)
+      if (endTimeoutRef.current) clearTimeout(endTimeoutRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [char, trigger, targetIndex])
 
-  const offsetPercent = (currentIndex / REEL_CHARS.length) * 100
+  const offsetPercent = (position / length) * 100
 
   return (
     <span
@@ -71,7 +64,7 @@ function RollChar({ char, trigger }) {
         className="absolute left-0 right-0 flex flex-col"
         style={{
           transform: `translateY(-${offsetPercent}%)`,
-          transition: 'none',
+          transition: `transform ${900}ms cubic-bezier(0.16, 1, 0.3, 1)`,
           willChange: 'transform',
         }}
       >
